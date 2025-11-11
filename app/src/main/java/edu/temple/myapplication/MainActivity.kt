@@ -6,7 +6,9 @@ import android.content.Intent
 import android.content.ServiceConnection
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
+import android.os.Message
 import android.widget.Button
 import android.widget.TextView
 
@@ -19,9 +21,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var stopButton: Button
     private lateinit var textView: TextView
 
+    private val timerHandler = object : Handler() {
+        override fun handleMessage(msg: Message) {
+            textView.text = msg.what.toString()
+        }
+    }
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             timerBinder = service as TimerService.TimerBinder
+            timerBinder?.setHandler(timerHandler)
             isBound = true
         }
 
@@ -71,9 +79,12 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-//        override fun onDestroy() {
-//            // The service is no longer used and is being destroyed
-//        }
-
+        override fun onDestroy() {
+            super.onDestroy()
+            if (isBound) {
+                unbindService(connection)
+                isBound = false
+            }
+        }
     }
 
