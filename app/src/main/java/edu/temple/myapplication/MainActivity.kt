@@ -10,6 +10,8 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Message
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
 import android.widget.TextView
 
@@ -22,6 +24,53 @@ class MainActivity : AppCompatActivity() {
     private lateinit var stopButton: Button
     private lateinit var textView: TextView
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+
+        menuInflater.inflate(R.menu.main, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        val startMenuItem = menu?.findItem(R.id.action_play)
+        val stopMenuItem = menu?.findItem(R.id.action_pause)
+
+        if (isBound && timerBinder != null) {
+            when {
+                !timerBinder!!.isRunning && !timerBinder!!.paused -> {
+                    startMenuItem?.title = "Start"
+                }
+
+                timerBinder!!.isRunning && !timerBinder!!.paused -> {
+                    startMenuItem?.title = "Pause"
+                }
+
+                timerBinder!!.paused -> {
+                    startMenuItem?.title = "Resume"
+                }
+            }
+        } else {
+            startMenuItem?.title = "Start"
+        }
+
+        return super.onPrepareOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_play -> {
+                handleStartAction()
+                true
+            }
+
+            R.id.action_pause -> {
+                handleStopAction()
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     private val timerHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             textView.text = msg.what.toString()
@@ -32,6 +81,7 @@ class MainActivity : AppCompatActivity() {
             timerBinder = service as TimerService.TimerBinder
             timerBinder?.setHandler(timerHandler)
             isBound = true
+            invalidateOptionsMenu()
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -44,40 +94,44 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        startButton = findViewById<Button>(R.id.startButton)
-        stopButton = findViewById<Button>(R.id.stopButton)
         textView = findViewById<TextView>(R.id.textView)
 
         Intent(this, TimerService::class.java).also {
             bindService(it, connection, Context.BIND_AUTO_CREATE)
         }
+        startButton.setOnClickListener {
+            handleStartAction()
+        }
 
-        findViewById<Button>(R.id.startButton).setOnClickListener {
+        stopButton.setOnClickListener {
+            handleStopAction()
+        }
+    }
+
+        private fun handleStartAction() {
             startService(Intent(this, TimerService::class.java))
             if (isBound) {
                 if (!timerBinder!!.isRunning && !timerBinder!!.paused) {
-                    timerBinder!!.start(10)
+                    timerBinder!!.start(100)
                     startButton.text = "Pause"
                 } else if (timerBinder!!.isRunning && !timerBinder!!.paused) {
                     timerBinder!!.pause()
                     startButton.text = "Resume"
                 } else if (timerBinder!!.paused) {
-                    timerBinder!!.pause()  // unpause
+                    timerBinder!!.pause()
                     startButton.text = "Pause"
                 }
+                invalidateOptionsMenu()
             }
         }
 
-
-
-        findViewById<Button>(R.id.stopButton).setOnClickListener {
+        private fun handleStopAction() {
             if (isBound) {
                 timerBinder!!.stop()
                 startButton.text = "Start"
                 textView.text = "Stopped"
+                invalidateOptionsMenu()
             }
-        }
-
         }
 
         override fun onDestroy() {
