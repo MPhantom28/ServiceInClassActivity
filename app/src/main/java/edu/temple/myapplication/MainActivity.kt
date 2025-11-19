@@ -19,15 +19,12 @@ class MainActivity : AppCompatActivity() {
 
     private var timerBinder: TimerService.TimerBinder? = null
     private var isBound = false
-
-    private lateinit var startButton: Button
-    private lateinit var stopButton: Button
     private lateinit var textView: TextView
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 
         menuInflater.inflate(R.menu.main, menu)
-        return super.onCreateOptionsMenu(menu)
+        return true
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
@@ -70,7 +67,6 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-
     private val timerHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             textView.text = msg.what.toString()
@@ -89,7 +85,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -99,13 +94,6 @@ class MainActivity : AppCompatActivity() {
         Intent(this, TimerService::class.java).also {
             bindService(it, connection, Context.BIND_AUTO_CREATE)
         }
-        startButton.setOnClickListener {
-            handleStartAction()
-        }
-
-        stopButton.setOnClickListener {
-            handleStopAction()
-        }
     }
 
         private fun handleStartAction() {
@@ -113,13 +101,10 @@ class MainActivity : AppCompatActivity() {
             if (isBound) {
                 if (!timerBinder!!.isRunning && !timerBinder!!.paused) {
                     timerBinder!!.start(100)
-                    startButton.text = "Pause"
                 } else if (timerBinder!!.isRunning && !timerBinder!!.paused) {
                     timerBinder!!.pause()
-                    startButton.text = "Resume"
                 } else if (timerBinder!!.paused) {
                     timerBinder!!.pause()
-                    startButton.text = "Pause"
                 }
                 invalidateOptionsMenu()
             }
@@ -128,7 +113,6 @@ class MainActivity : AppCompatActivity() {
         private fun handleStopAction() {
             if (isBound) {
                 timerBinder!!.stop()
-                startButton.text = "Start"
                 textView.text = "Stopped"
                 invalidateOptionsMenu()
             }
@@ -141,5 +125,4 @@ class MainActivity : AppCompatActivity() {
                 isBound = false
             }
         }
-    }
-
+}
